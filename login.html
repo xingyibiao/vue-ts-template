@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <form action="/api/user/login" method="POST">
+    <input type="text" name="username" id="username">
+    <input type="text" name="password" id="password">
+    <input type="text" name="authCode" id="authCode">
+    <img id="img" src="" alt="">
+    <input type="button" value="登录" id="submit">
+  </form>
+  <script>
+    window.onload = function() {
+      var xhr = new XMLHttpRequest()
+      var authCode = ''
+      var $img = document.querySelector('#img')
+      xhr.responseType = 'arraybuffer'
+      xhr.open('GET', '/api/user/genAuthCode', true)
+      xhr.addEventListener('readystatechange', function() {
+        if (xhr.readyState === 4 && xhr.status === 200 || xhr.status === 304) {
+          authCode = 'data:image/png;base64,' + btoa(
+            new Uint8Array(xhr.response)
+              .reduce((data, byte) => data + String.fromCharCode(byte), ''),
+          )
+          $img.src = authCode
+        }
+      })
+      xhr.send()
+    }
+    function ajax(option) {
+      var xhr = new XMLHttpRequest()
+      xhr.open(option.method || 'GET', option.url, true)
+      xhr.setRequestHeader("Content-Type",option.contentType)
+      xhr.addEventListener('readystatechange', function() {
+        if (xhr.readyState === 4 && xhr.status === 200 || xhr.status === 304) {
+          option.success(xhr.response)
+        }
+      })
+      xhr.send(option.data)
+    }
+    var $submit = document.querySelector('#submit')
+    var $username = document.querySelector('#username')
+    var $password = document.querySelector('#password')
+    var $authCode = document.querySelector('#authCode')
+    $submit.addEventListener('click', function() {
+      var username = $username.value
+      var password = $password.value
+      var authCode = $authCode.value
+      var data = 'username=' + username + '&password=' + password + '&authCode=' + authCode
+      ajax({
+        url: '/api/user/login',
+        method: 'POST',
+        data: data,
+        contentType: 'application/x-www-form-urlencoded',
+        success: function(res) {
+          var res = JSON.parse(res)
+          var status = res.status
+          var data = res.data
+          var msg = res.msg
+          console.log(typeof res)
+          if (status === 200) {
+            var token = data.token
+            localStorage.setItem('token', token)
+            alert('登录成功')
+          } else {
+            alert(msg)
+          }
+        }
+      })
+    })
+  </script>
+</body>
+</html>
